@@ -1,0 +1,480 @@
+```java
+package com.dhl.pages;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import org.testng.Assert;
+
+/**
+ * Page Object Model for DHL Post & DHL App Landing Page.
+ * Provides reusable methods and validations for the DHL App info page available at https://www.dhl.de/en/privatkunden/kampagnenseiten/dhl-app.html
+ * <p>
+ * This class encapsulates all important web elements such as navigation links, stage items,
+ * CTAs (Call to Action buttons), accordions for FAQs, language selector, footer links and more.
+ * 
+ * It supports interaction, validation, and assertion methods following best practices for waits and error handling using Selenium WebDriver.
+ * <p>
+ * Author: ChatGPT-4 Automation Architect
+ * Created: 2025-11-11
+ * Purpose: Provide a maintainable, production-ready POM for DHL App main landing page
+ */
+public class DhlAppLandingPage {
+
+    private WebDriver driver;
+    private WebDriverWait wait;
+    private final Duration TIMEOUT = Duration.ofSeconds(15);
+    private final Duration POLLING = Duration.ofMillis(300);
+
+    // ------------------------
+    // Locators Declaration
+    // ------------------------
+
+    // Main navigation bar (aria-label)
+    private By primaryNavigation = By.cssSelector("nav[aria-label='Main navigation'].primary-navigation");
+
+    // Secondary navigation links container
+    private By secondaryNav = By.cssSelector("nav[aria-label='Submenu'].secondary-navigation");
+
+    // Secondary Nav links: Private Customers and Business Customer
+    private By privateCustomersLink = By.cssSelector("a.secondary-navigation__link.secondary-navigation__link--active");
+    private By businessCustomerLink = By.cssSelector("a.secondary-navigation__link:not(.secondary-navigation__link--active)");
+
+    // Login / Logout user menu button
+    private By userMenuButton = By.cssSelector("a.primary-navigation__link.user-menu__button");
+
+    // User Menu Username label (shows 'Login' text when logged out)
+    private By userMenuUsernameSpan = By.cssSelector("span.user-menu__username");
+
+    // Language selector container (list item with class 'lang')
+    private By languageSelectorLi = By.cssSelector("li.lang");
+
+    // Currently selected Language option in language dropdown
+    private By currentLanguageOption = By.cssSelector("a.lang__option.lang__option--current");
+
+    // Stage item link for "Post & DHL app"
+    private By stageAppLink = By.cssSelector("a.stage-item__link");
+
+    // Stage item title and text
+    private By stageItemTitle = By.cssSelector("h1.stage-item__title.text--inversive");
+    private By stageItemText = By.cssSelector("div.stage-item__text.text--inversive");
+
+    // Download now button (Primary large CTA)
+    private By downloadNowButton = By.cssSelector("div.stage-item__cta.btn.btn--primary.btn--large");
+
+    // Teasers section titles and CTAs
+    private By teaserContainers = By.cssSelector("div.teaser__container");
+    private By teaserTitles = By.cssSelector("div.teaser__title");
+    private By teaserButtons = By.cssSelector("div.teaser__btn.btn.btn--ghost");
+
+    // Accordion accordion-item headers (FAQs questions)
+    private By faqAccordionItems = By.cssSelector("div.accordion-item");
+    private By faqAccordionHeaders = By.cssSelector("a.accordion-item__header");
+
+    // Footer navigation row
+    private By footerNavigation = By.cssSelector("nav[aria-label='Footer navigation'].footer__row-navigation");
+
+    // Footer links (generic)
+    private By footerLinks = By.cssSelector("nav.footer__row-navigation a");
+
+    // Social media links in footer
+    private By footerSocialLinks = By.cssSelector("a.circle-icon__link");
+
+    // Register now button (btn-primary, large)
+    private By registerNowButton = By.cssSelector("a.btn.btn--primary.btn--large");
+
+    // Page headline H2 elements (multiple usages in page sections)
+    private By allH2Headings = By.cssSelector("h2");
+
+    // ------------------------
+    // Constructor
+    // ------------------------
+
+    /**
+     * Constructor initializing driver and wait.
+     *
+     * @param driver Instance of WebDriver to interact with browser
+     */
+    public DhlAppLandingPage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, TIMEOUT, POLLING.toMillis());
+    }
+
+    // ------------------------
+    // Reusable Methods - Navigation
+    // ------------------------
+
+    /**
+     * Clicks the Private Customers link in the secondary navigation after waiting until visible.
+     */
+    public void clickPrivateCustomersLink() {
+        try {
+            WebElement link = wait.until(ExpectedConditions.elementToBeClickable(privateCustomersLink));
+            link.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Private Customers link not clickable after waiting.", e);
+        }
+    }
+
+    /**
+     * Clicks the Business Customer link in the secondary navigation after waiting until visible.
+     */
+    public void clickBusinessCustomerLink() {
+        try {
+            WebElement link = wait.until(ExpectedConditions.elementToBeClickable(businessCustomerLink));
+            link.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Business Customer link not clickable after waiting.", e);
+        }
+    }
+
+    /**
+     * Checks whether the Private Customers link is displayed and active.
+     *
+     * @return true if displayed and has active class, else false
+     */
+    public boolean isPrivateCustomersLinkDisplayedAndActive() {
+        try {
+            WebElement link = driver.findElement(privateCustomersLink);
+            return link.isDisplayed() && link.getAttribute("class").contains("secondary-navigation__link--active");
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks whether the Business Customer link is displayed.
+     *
+     * @return true if displayed, else false
+     */
+    public boolean isBusinessCustomerLinkDisplayed() {
+        try {
+            WebElement link = driver.findElement(businessCustomerLink);
+            return link.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Clicks the user menu button (Login/Logout toggle).
+     */
+    public void clickUserMenuButton() {
+        try {
+            WebElement btn = wait.until(ExpectedConditions.elementToBeClickable(userMenuButton));
+            btn.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("User menu button not clickable.", e);
+        }
+    }
+
+    /**
+     * Gets the username text displayed in user menu (or "Login" if logged out).
+     *
+     * @return username text or "Login"
+     */
+    public String getUserMenuUsernameText() {
+        try {
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(userMenuUsernameSpan)).getText().trim();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("User menu username not visible.", e);
+        }
+    }
+
+    // ------------------------
+    // Reusable Methods - Language Selector
+    // ------------------------
+
+    /**
+     * Gets the currently selected language code, e.g. "EN"
+     *
+     * @return the current language code string
+     */
+    public String getCurrentLanguage() {
+        try {
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(currentLanguageOption)).getText().trim();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Current language option not visible.", e);
+        }
+    }
+
+    /**
+     * Selects a language by its exact visible text from the language selector options.
+     *
+     * @param languageCode Language code to select, e.g. "EN" or "DE"
+     */
+    public void selectLanguage(String languageCode) {
+        try {
+            // Open language selector, if clickable element exists (li.lang or similar)
+            WebElement langSelector = wait.until(ExpectedConditions.elementToBeClickable(languageSelectorLi));
+            langSelector.click();
+
+            // Find language option link with exact text match
+            By langOptionLocator = By.xpath("//a[contains(@class,'lang__option') and normalize-space(text())='" + languageCode + "']");
+            WebElement option = wait.until(ExpectedConditions.elementToBeClickable(langOptionLocator));
+            option.click();
+
+            // Wait for page reload, language update could cause page refresh
+            waitForPageToLoad();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Failed to select language: " + languageCode, e);
+        }
+    }
+
+    // ------------------------
+    // Reusable Methods - Stage Item (Main App Area)
+    // ------------------------
+
+    /**
+     * Gets the main stage item title text ("Post & DHL app")
+     *
+     * @return stage item title text
+     */
+    public String getStageItemTitleText() {
+        try {
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(stageItemTitle)).getText().trim();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Stage item title not visible.", e);
+        }
+    }
+
+    /**
+     * Gets the main stage item descriptive text beneath the title.
+     *
+     * @return stage item descriptive text
+     */
+    public String getStageItemText() {
+        try {
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(stageItemText)).getText().trim();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Stage item descriptive text not visible.", e);
+        }
+    }
+
+    /**
+     * Clicks on the main stage item link ("Post & DHL app" link area).
+     */
+    public void clickStageAppLink() {
+        try {
+            WebElement link = wait.until(ExpectedConditions.elementToBeClickable(stageAppLink));
+            link.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Stage app link not clickable.", e);
+        }
+    }
+
+    /**
+     * Clicks the "Download now" primary button on the stage section.
+     */
+    public void clickDownloadNowButton() {
+        try {
+            WebElement btn = wait.until(ExpectedConditions.elementToBeClickable(downloadNowButton));
+            btn.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Download now button not clickable.", e);
+        }
+    }
+
+    /**
+     * Checks if the "Download now" button is displayed.
+     *
+     * @return true if displayed else false
+     */
+    public boolean isDownloadNowButtonDisplayed() {
+        try {
+            WebElement btn = driver.findElement(downloadNowButton);
+            return btn.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the text of the "Download now" button.
+     *
+     * @return button text
+     */
+    public String getDownloadNowButtonText() {
+        try {
+            return driver.findElement(downloadNowButton).getText().trim();
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("Download now button not found when trying to get text.", e);
+        }
+    }
+
+    // ------------------------
+    // Reusable Methods - FAQ Accordion
+    // ------------------------
+
+    /**
+     * Gets count of all FAQ accordion items visible on the page.
+     *
+     * @return number of FAQ items
+     */
+    public int getFaqAccordionItemCount() {
+        return driver.findElements(faqAccordionItems).size();
+    }
+
+    /**
+     * Gets the FAQ question text at given index (zero-based).
+     *
+     * @param index zero-based index of FAQ item
+     * @return FAQ question text
+     */
+    public String getFaqQuestionText(int index) {
+        List<WebElement> headers = driver.findElements(faqAccordionHeaders);
+        if (index < 0 || index >= headers.size()) {
+            throw new IndexOutOfBoundsException("FAQ index out of range: " + index);
+        }
+        return headers.get(index).getText().trim();
+    }
+
+    /**
+     * Expands the FAQ question by clicking the header at the given index.
+     *
+     * @param index zero-based index of FAQ to expand
+     */
+    public void expandFaqItem(int index) {
+        List<WebElement> headers = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(faqAccordionHeaders));
+        if (index < 0 || index >= headers.size()) {
+            throw new IndexOutOfBoundsException("FAQ index out of range: " + index);
+        }
+        WebElement header = headers.get(index);
+        try {
+            if (!header.getAttribute("class").contains("collapsed")) {
+                // Already expanded
+                return;
+            }
+            header.click();
+            // Wait for the corresponding panel to be visible
+            String ariaControls = header.getAttribute("data-bs-target");
+            if (ariaControls != null && !ariaControls.isEmpty()) {
+                By panelLocator = By.cssSelector(ariaControls);
+                wait.until(ExpectedConditions.visibilityOfElementLocated(panelLocator));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to expand FAQ item at index: " + index, e);
+        }
+    }
+
+    // ------------------------
+    // Reusable Methods - Footer Links
+    // ------------------------
+
+    /**
+     * Gets all footer navigation link texts.
+     *
+     * @return List of footer link texts
+     */
+    public List<String> getAllFooterLinkTexts() {
+        List<WebElement> links = driver.findElements(footerLinks);
+        return links.stream().map(WebElement::getText).map(String::trim).collect(Collectors.toList());
+    }
+
+    /**
+     * Clicks a footer link by visible link text.
+     *
+     * @param linkText visible text of the footer link to click
+     */
+    public void clickFooterLinkByText(String linkText) {
+        try {
+            By locator = By.xpath("//nav[contains(@class,'footer__row-navigation')]//a[normalize-space()='" + linkText + "']");
+            WebElement link = wait.until(ExpectedConditions.elementToBeClickable(locator));
+            link.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Footer link with text '" + linkText + "' not clickable.", e);
+        }
+    }
+
+    // ------------------------
+    // Reusable Methods - Register Now Button
+    // ------------------------
+
+    /**
+     * Clicks the "Register now" button on the page.
+     */
+    public void clickRegisterNowButton() {
+        try {
+            WebElement btn = wait.until(ExpectedConditions.elementToBeClickable(registerNowButton));
+            btn.click();
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Register now button not clickable.", e);
+        }
+    }
+
+    /**
+     * Checks if the "Register now" button is displayed.
+     *
+     * @return true if button is visible, false otherwise
+     */
+    public boolean isRegisterNowButtonDisplayed() {
+        try {
+            WebElement btn = driver.findElement(registerNowButton);
+            return btn.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    // ------------------------
+    // Utility Methods - Page Level
+    // ------------------------
+
+    /**
+     * Waits for the page to load completely by checking the title and main stage availability.
+     */
+    public void waitForPageToLoad() {
+        try {
+            wait.until(ExpectedConditions.titleContains("DHL"));
+            wait.until(ExpectedConditions.visibilityOfElementLocated(stageAppLink));
+        } catch (TimeoutException e) {
+            throw new RuntimeException("DHL App landing page did not load correctly or within timeout.", e);
+        }
+    }
+
+    /**
+     * Checks if the DHL Post & DHL App Landing Page is currently displaying.
+     *
+     * @return true if page is displaying, else false
+     */
+    public boolean isPageDisplaying() {
+        try {
+            String title = driver.getTitle();
+            boolean titleCheck = title != null && title.toLowerCase().contains("dhl");
+            boolean stageLinkVisible = driver.findElement(stageAppLink).isDisplayed();
+            return titleCheck && stageLinkVisible;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the current page title.
+     *
+     * @return page title string
+     */
+    public String getPageTitle() {
+        return driver.getTitle();
+    }
+
+    /**
+     * Asserts that the current page URL matches the expected URL.
+     *
+     * @param expectedURL the expected URL of the page
+     */
+    public void assertPageURL(String expectedURL) {
+        String actualURL = driver.getCurrentUrl();
+        Assert.assertEquals(actualURL, expectedURL, "Page URL does not match expected URL.");
+    }
+
+    // ------------------------
+    // Additional Methods Could be added below as required for other elements on page.
+    // ------------------------
+
+}
+```
